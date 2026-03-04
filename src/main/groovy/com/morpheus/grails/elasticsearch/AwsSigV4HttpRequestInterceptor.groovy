@@ -33,14 +33,6 @@ import java.time.format.DateTimeFormatter
 @Slf4j
 class AwsSigV4HttpRequestInterceptor implements HttpRequestInterceptor {
 
-    // Headers that must never be included in the SigV4 canonical string.
-    // - Host is handled separately by the SDK / reconstructed from the request line.
-    // - x-elastic-* headers are injected by the ES client after signing.
-    // - content-length is rewritten by Apache after the interceptor runs.
-    private static final Set<String> EXCLUDED_HEADERS = [
-        'host', 'content-length', 'transfer-encoding', 'connection'
-    ] as Set<String>
-
     private static final Set<String> HEADERS_TO_SIGN = [
             'host', 'x-amz-date', 'x-amz-security-token'
     ]
