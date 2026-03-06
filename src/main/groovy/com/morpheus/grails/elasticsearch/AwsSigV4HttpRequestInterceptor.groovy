@@ -131,7 +131,7 @@ class AwsSigV4HttpRequestInterceptor implements HttpRequestInterceptor {
             def canonicalQueryString = buildCanonicalQueryString(uri.rawQuery)
 
             // ── 6. Canonical request ──
-            def canonicalPath    = uri.rawPath ?: '/'
+            def canonicalPath    = encodePathSegments(uri.rawPath ?: '/')
             def canonicalRequest = [
                 method,
                 canonicalPath,
@@ -186,6 +186,15 @@ class AwsSigV4HttpRequestInterceptor implements HttpRequestInterceptor {
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
+
+    private static String encodePathSegments(String rawPath) {
+        // SigV4 canonical URI: each path segment must be URI-encoded (encode all non-unreserved chars).
+        // rawPath from Java URI preserves chars like ':' that are valid in path segments per RFC 3986
+        // but must be percent-encoded per SigV4 spec (unreserved = A-Z a-z 0-9 - _ . ~).
+        rawPath.split('/', -1).collect { segment ->
+            segment.isEmpty() ? '' : uriEncode(URLDecoder.decode(segment, 'UTF-8'))
+        }.join('/')
+    }
 
     private static String buildCanonicalQueryString(String rawQuery) {
         if (!rawQuery) return ''
